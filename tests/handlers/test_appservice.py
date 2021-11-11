@@ -253,20 +253,59 @@ class AppServiceHandlerTestCase(unittest.TestCase):
             },
         )
 
-    def test_notify_interested_services_ephemeral(self):
+    def test_notify_interested_services_ephemeral_read_receipt(self):
         """
-        Test sending ephemeral events to the appservice handler are scheduled
+        Test sending read receipts to the appservice handler are scheduled
         to be pushed out to interested appservices, and that the stream ID is
         updated accordingly.
         """
+        # Create an application service that is guaranteed to be interested in
+        # any new events
         interested_service = self._mkservice(is_interested=True)
         services = [interested_service]
-
         self.mock_store.get_app_services.return_value = services
+
+        # State that this application service has received up until stream ID 579
         self.mock_store.get_type_stream_id_for_appservice.return_value = make_awaitable(
             579
         )
 
+        # Set up a dummy event that should be sent to the application service
+        event = Mock(event_id="event_1")
+        self.event_source.sources.receipt.get_new_events_as.return_value = (
+            make_awaitable(([event], None))
+        )
+
+        self.handler.notify_interested_services_ephemeral(
+            "receipt_key", 580, ["@fakerecipient:example.com"]
+        )
+        self.mock_scheduler.submit_ephemeral_events_for_as.assert_called_once_with(
+            interested_service, [event]
+        )
+        self.mock_store.set_type_stream_id_for_appservice.assert_called_once_with(
+            interested_service,
+            "read_receipt",
+            580,
+        )
+
+    def test_notify_interested_services_ephemeral_to_device(self):
+        """
+        Test sending read receipts to the appservice handler are scheduled
+        to be pushed out to interested appservices, and that the stream ID is
+        updated accordingly.
+        """
+        # Create an application service that is guaranteed to be interested in
+        # any new events
+        interested_service = self._mkservice(is_interested=True)
+        services = [interested_service]
+        self.mock_store.get_app_services.return_value = services
+
+        # State that this application service has received up until stream ID 579
+        self.mock_store.get_type_stream_id_for_appservice.return_value = make_awaitable(
+            579
+        )
+
+        # Set up a dummy event that should be sent to the application service
         event = Mock(event_id="event_1")
         self.event_source.sources.receipt.get_new_events_as.return_value = (
             make_awaitable(([event], None))

@@ -230,7 +230,7 @@ class RestHelper:
         custom_headers: Optional[
             Iterable[Tuple[Union[bytes, str], Union[bytes, str]]]
         ] = None,
-    ):
+    ) -> JsonDict:
         if body is None:
             body = "body_text_here"
 
@@ -257,7 +257,7 @@ class RestHelper:
         custom_headers: Optional[
             Iterable[Tuple[Union[bytes, str], Union[bytes, str]]]
         ] = None,
-    ):
+    ) -> JsonDict:
         if txn_id is None:
             txn_id = "m%s" % (str(time.time()))
 
